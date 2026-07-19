@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#3E6B3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="我们的厨房">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<title>我们的厨房</title>
+<style>
+:root{
+  color-scheme:light;
+  --paper:#FBF8F1;
+  --ink:#22301F;
+  --green:#3E6B3A;
+  --green-soft:#E4EEDF;
+  --yolk:#F2A93B;
+  --yolk-soft:#FCEDD2;
+  --red:#C4502F;
+  --red-soft:#F8E2DA;
+  --line:#E3DECF;
+  --muted:#8A8672;
+  --radius:14px;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{background:var(--paper)}
+body{
+  font-family:-apple-system,"PingFang SC","Noto Sans SC",sans-serif;
+  background:var(--paper);color:var(--ink);
+  max-width:520px;margin:0 auto;
+  padding-bottom:80px;min-height:100vh;
+}
+header{padding:20px 18px 10px}
+header h1{font-size:22px;font-weight:800;letter-spacing:1px}
+header .sub{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:8px}
+.sync-btn{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;color:var(--ink)}
+.tabs{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;display:flex;background:#fff;border-top:1px solid var(--line);z-index:50}
+.tabs button{flex:1;padding:10px 0 max(10px, env(safe-area-inset-bottom));background:none;border:none;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit}
+.tabs button .ic{font-size:20px}
+.tabs button.on{color:var(--green);font-weight:700}
+.page{display:none;padding:6px 16px 20px}
+.page.on{display:block}
+.section-t{font-size:13px;font-weight:700;color:var(--muted);margin:16px 2px 8px;display:flex;align-items:center;gap:8px}
+.section-t::after{content:"";flex:1;height:1px;background:var(--line)}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px}
+.row{display:flex;align-items:center;gap:10px}
+.grow{flex:1;min-width:0}
+.item-name{font-weight:600;font-size:15px}
+.item-sub{font-size:12px;color:var(--muted);margin-top:1px}
+.qty-ctrl{display:flex;align-items:center;gap:6px}
+.qty-ctrl button{width:34px;height:34px;border-radius:10px;border:1px solid var(--line);background:var(--paper);font-size:18px;font-weight:700;color:var(--ink)}
+.qty-num{min-width:64px;text-align:center;font-weight:700;font-size:15px}
+.qty-num small{font-weight:400;color:var(--muted);font-size:11px}
+.chip{padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;border:none;font-family:inherit}
+.chip.ok{background:var(--green-soft);color:var(--green)}
+.chip.low{background:var(--yolk-soft);color:#9A6A10}
+.chip.out{background:var(--red-soft);color:var(--red)}
+.low-flag{font-size:11px;color:var(--red);font-weight:600}
+.fab{position:fixed;bottom:76px;right:calc(50% - 250px);width:52px;height:52px;border-radius:50%;background:var(--green);color:#fff;font-size:26px;border:none;box-shadow:0 4px 14px rgba(62,107,58,.35);z-index:40}
+@media(max-width:540px){.fab{right:18px}}
+.recipe-card{position:relative}
+.recipe-card h3{font-size:16px;font-weight:700}
+.time-tag{font-size:12px;color:var(--muted)}
+.ing-line{font-size:12.5px;color:var(--muted);margin-top:6px;line-height:1.6}
+.ing-line b{color:var(--ink);font-weight:600}
+.opt-mark{color:var(--muted)}
+.match-band{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:4px 10px;border-radius:20px;margin-top:8px}
+.match-band.full{background:var(--green-soft);color:var(--green)}
+.match-band.near{background:var(--yolk-soft);color:#9A6A10}
+.match-band.far{background:var(--red-soft);color:var(--red)}
+.miss-list{font-size:12px;color:var(--red);margin-top:6px}
+.btn{display:block;width:100%;padding:13px;border-radius:12px;border:none;font-size:15px;font-weight:700;font-family:inherit;margin-top:10px}
+.btn.primary{background:var(--green);color:#fff}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
+.btn.warn{background:var(--red-soft);color:var(--red)}
+.btn:disabled{opacity:.4}
+.mini-btn{padding:7px 14px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;font-family:inherit;color:var(--ink);font-weight:600}
+.mini-btn.green{background:var(--green);color:#fff;border-color:var(--green)}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(34,48,31,.45);display:none;z-index:100;align-items:flex-end;justify-content:center}
+.modal-bg.on{display:flex}
+.modal{background:var(--paper);width:100%;max-width:520px;border-radius:20px 20px 0 0;padding:20px 18px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow-y:auto}
+.modal h2{font-size:17px;font-weight:800;margin-bottom:14px}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:12px 0 4px}
+input.f,select.f{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;font-size:15px;font-family:inherit;background:#fff;color:var(--ink)}
+input.f:focus,select.f:focus{outline:2px solid var(--green);border-color:transparent}
+.f-row{display:flex;gap:8px}
+.f-row>*{flex:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{flex:1;padding:10px;border:none;background:#fff;font-size:14px;font-family:inherit;color:var(--muted)}
+.seg button.on{background:var(--green);color:#fff;font-weight:700}
+.ing-row{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-top:8px}
+.ing-row .top{display:flex;gap:6px;align-items:center}
+.ing-row input{flex:1;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit}
+.ing-row .amt{max-width:70px}
+.ing-row .unit{max-width:56px}
+.nec-toggle{padding:8px 10px;border-radius:8px;border:none;font-size:12px;font-weight:700;font-family:inherit;white-space:nowrap}
+.nec-toggle.must{background:var(--red-soft);color:var(--red)}
+.nec-toggle.opt{background:var(--green-soft);color:var(--green)}
+.del-x{background:none;border:none;color:var(--muted);font-size:18px;padding:4px}
+.toast{position:fixed;top:16px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 20px;border-radius:24px;font-size:14px;z-index:200;opacity:0;transition:opacity .25s;pointer-events:none;max-width:90%}
+.toast.on{opacity:1}
+.empty{text-align:center;color:var(--muted);font-size:13px;padding:40px 20px;line-height:1.8}
+.shop-item{display:flex;align-items:center;gap:12px}
+.shop-item .why{font-size:11px;color:var(--red)}
+.swipe-del{color:var(--red);background:none;border:none;font-size:13px;font-family:inherit;padding:6px}
+.badge{position:absolute;top:-4px;right:14px;background:var(--red);color:#fff;font-size:10px;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.tabs button{position:relative}
+/* ---- 厨房场景 ---- */
+.kitchen-scene{display:flex;flex-direction:column;gap:20px;padding:10px 6px 4px}
+.unit-name{font-size:12px;font-weight:800;color:var(--muted);letter-spacing:3px;margin:0 4px 7px}
+.door{position:relative;cursor:pointer;transition:transform .28s cubic-bezier(.3,1.5,.5,1),box-shadow .28s;transform-origin:left center}
+.door.pull{transform:perspective(700px) rotateY(-16deg);box-shadow:16px 10px 26px rgba(50,60,70,.35);z-index:2}
+/* 冰箱：灰色拉丝双门 */
+.u-fridge{background:linear-gradient(120deg,#6E767D,#8A9299 45%,#5F676E);border-radius:18px;padding:10px;box-shadow:0 12px 26px rgba(45,55,65,.3);display:flex;flex-direction:column;gap:0}
+.fz-door,.ch-door{border-radius:11px;background:repeating-linear-gradient(90deg,#848C93 0 2px,#8E969D 2px 5px);border:1px solid #5A626A;box-shadow:inset 0 2px 4px rgba(255,255,255,.3),inset 0 -5px 10px rgba(25,35,45,.35)}
+.fz-door{height:96px}
+.ch-door{height:168px}
+.f-gap{height:7px;background:linear-gradient(#3F474E,#565E65);margin:2px 3px;border-radius:3px}
+.fridge-handle{position:absolute;left:12px;top:12px;width:7px;height:56%;border-radius:4px;background:linear-gradient(90deg,#4A525A,#B8C0C6 45%,#3F474E);box-shadow:2px 2px 4px rgba(20,30,40,.4)}
+.mag{position:absolute;font-size:16px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+.f-label{position:absolute;left:14px;bottom:11px;right:14px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px;letter-spacing:1px}
+.f-label.light{color:#F4F7F9;text-shadow:0 1px 2px rgba(20,30,40,.5)}
+.f-label.dark{color:#553F1F;text-shadow:0 1px 0 rgba(255,255,255,.4)}
+.f-count{background:var(--green);color:#fff;font-size:11px;min-width:20px;height:20px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;padding:0 6px;text-shadow:none}
+.f-count.warn{background:var(--red)}
+/* 木柜 */
+.u-cab{background:linear-gradient(#A8834F,#8F6C3C);border-radius:16px;padding:9px;box-shadow:0 10px 22px rgba(110,80,35,.28);display:flex;flex-direction:column;gap:9px}
+.cab-door{height:86px;border-radius:9px;background:repeating-linear-gradient(180deg,#E2C08E 0 7px,#D9B57E 7px 14px);border:1px solid #9A7440;box-shadow:inset 0 2px 3px rgba(255,255,255,.55),inset 0 -4px 8px rgba(110,80,35,.35)}
+.cab-door.tall{height:110px}
+.knob{position:absolute;right:14px;top:50%;transform:translateY(-50%);width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 32%,#F7EACB,#7E5F30);box-shadow:0 2px 4px rgba(60,40,10,.45)}
+.u-cab.low{padding-top:0}
+.counter-top{height:14px;background:linear-gradient(#F5F2EA,#D6D1C3);border-radius:14px 14px 4px 4px;margin:0 -9px 9px;box-shadow:0 3px 5px rgba(60,60,55,.2)}
+.misc-basket{align-self:center;background:#fff;border:1px solid var(--line);border-radius:26px;padding:11px 22px;font-weight:700;font-size:14px;display:flex;gap:10px;align-items:center;box-shadow:0 4px 12px rgba(50,55,45,.1);cursor:pointer}
+.fridge-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
+.star{background:none;border:none;font-size:20px;padding:2px 4px;line-height:1}
+.plan-tag{display:inline-flex;background:var(--ink);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;margin:8px 8px 0 0}
+/* 分区面板固定头尾，中间滚动 */
+#mZone .modal{display:flex;flex-direction:column;height:82vh}
+#mZone .zone-inner{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#mZone #znClose{flex-shrink:0}
+/* 分区内部面板 */
+.zone-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.zone-head h2{margin:0;flex:1}
+.zone-inner{background:linear-gradient(#F2FAFF,#E2F0F8);border:1px solid #C6DCE9;border-radius:14px;padding:10px;box-shadow:inset 0 0 30px rgba(180,220,245,.5)}
+.zone-inner.warm{background:linear-gradient(#FDF6E8,#F7EAD0);border-color:#E3D0A8;box-shadow:inset 0 0 30px rgba(240,215,160,.4)}
+.zone-inner .card{margin-bottom:7px;padding:9px 12px}
+.zone-inner .card:last-child{margin-bottom:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>我们的厨房</h1>
+  <div class="sub"><span id="statLine">加载中…</span><button class="sync-btn" onclick="loadAll(true)">↻ 同步</button></div>
+</header>
+
+<!-- 今天吃什么 -->
+<div class="page on" id="p-cook">
+  <div id="cookList"></div>
+</div>
+
+<!-- 库存 -->
+<div class="page" id="p-inv">
+  <div class="kitchen-scene">
+    <div class="unit">
+      <div class="unit-name">冰箱</div>
+      <div class="u-fridge">
+        <div class="door fz-door" onclick="openZone('frz',this)">
+          <span class="mag" style="left:14%;top:16%">🐼</span>
+          <span class="mag" style="left:38%;top:34%">📷</span>
+          <span class="mag" style="right:20%;top:18%">🍳</span>
+          <div class="f-label light">急冻<span class="f-count" id="zc-frz">0</span></div>
+        </div>
+        <div class="f-gap"></div>
+        <div class="door ch-door" onclick="openZone('chill',this)">
+          <span class="mag" style="left:16%;top:14%">🖼️</span>
+          <span class="mag" style="left:44%;top:30%">📝</span>
+          <span class="mag" style="right:16%;top:16%">🧲</span>
+          <span class="mag" style="right:30%;top:48%">🎫</span>
+          <div class="fridge-handle"></div>
+          <div class="f-label light">保鲜<span class="f-count" id="zc-chill">0</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="unit">
+      <div class="unit-name">上柜</div>
+      <div class="u-cab">
+        <div class="door cab-door" onclick="openZone('cab1',this)">
+          <div class="knob"></div>
+          <div class="f-label dark">上层 · 泡面零食<span class="f-count" id="zc-cab1">0</span></div>
+        </div>
+        <div class="door cab-door" onclick="openZone('cab2',this)">
+          <div class="knob"></div>
+          <div class="f-label dark">下层 · 调料早餐<span class="f-count" id="zc-cab2">0</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="unit">
+      <div class="unit-name">下柜</div>
+      <div class="u-cab low">
+        <div class="counter-top"></div>
+        <div class="door cab-door tall" onclick="openZone('low',this)">
+          <div class="knob"></div>
+          <div class="f-label dark">干货 · 调味料<span class="f-count" id="zc-low">0</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="misc-basket" onclick="openZone('misc',this)">🧺 其他 / 没归位的<span class="f-count" id="zc-misc">0</span></div>
+  </div>
+  <div class="fridge-hint">点一扇门，打开看看里面有什么</div>
+</div>
+
+<!-- 食谱 -->
+<div class="page" id="p-rec">
+  <div id="recList"></div>
+</div>
+
+<!-- 购物清单 -->
+<div class="page" id="p-shop">
+  <div id="shopList"></div>
+</div>
+
+<button class="fab" id="fab" onclick="fabClick()">＋</button>
+
+<nav class="tabs">
+  <button class="on" data-p="cook" onclick="go('cook')"><span class="ic">🍳</span>今天吃什么</button>
+  <button data-p="inv" onclick="go('inv')"><span class="ic">🧺</span>库存</button>
+  <button data-p="rec" onclick="go('rec')"><span class="ic">📖</span>食谱</button>
+  <button data-p="shop" onclick="go('shop')" id="shopTab"><span class="ic">🛒</span>购物清单</button>
+</nav>
+
+<!-- 分区内容 -->
+<div class="modal-bg" id="mZone" onclick="if(event.target===this)closeZone()">
+  <div class="modal">
+    <div class="zone-head"><h2 id="znT">冰箱 · 急冻</h2><button class="mini-btn green" onclick="addToZone()">＋ 添加</button></div>
+    <input class="f" id="znSearch" placeholder="🔍 搜这一层的东西…" oninput="renderZone()" style="margin-bottom:10px">
+    <div class="zone-inner" id="znInner"><div id="znList"></div></div>
+    <button class="btn ghost" id="znClose" onclick="closeZone()">🚪 关上冰箱门</button>
+  </div>
+</div>
+
+<!-- 添加/编辑库存 -->
+<div class="modal-bg" id="mInv" onclick="if(event.target===this)closeM('mInv')">
+  <div class="modal">
+    <h2 id="mInvT">添加库存</h2>
+    <label class="f">名称</label>
+    <input class="f" id="ivName" placeholder="如：鸡蛋 / 生抽">
+    <div class="f-row">
+      <div><label class="f">位置</label><select class="f" id="ivLoc">
+        <option value="急冻">冰箱 · 急冻</option>
+        <option value="保鲜">冰箱 · 保鲜</option>
+        <option value="上柜上层">上柜 · 泡面零食</option>
+        <option value="上柜下层">上柜 · 调料早餐</option>
+        <option value="下柜">下柜 · 干货调料</option>
+        <option value="其他">其他</option>
+      </select></div>
+      <div><label class="f">备注（可选）</label><input class="f" id="ivNote" placeholder="如：已切好、速冻"></div>
+    </div>
+    <label class="f">类型</label>
+    <div class="seg" id="ivTypeSeg">
+      <button class="on" onclick="setIvType('count')">计数类</button>
+      <button onclick="setIvType('sta')">调料/常备</button>
+    </div>
+    <div id="ivCountFields">
+      <div class="f-row">
+        <div><label class="f">数量</label><input class="f" id="ivQty" type="number" inputmode="decimal" placeholder="500"></div>
+        <div><label class="f">单位</label><input class="f" id="ivUnit" placeholder="克 / 个 / 包"></div>
+      </div>
+      <label class="f">低于多少提醒补货</label>
+      <input class="f" id="ivMin" type="number" inputmode="decimal" placeholder="如 100（可不填）">
+    </div>
+    <div id="ivStaFields" style="display:none">
+      <label class="f">当前状态</label>
+      <div class="seg" id="ivStaSeg">
+        <button class="on" onclick="setIvSta('ok')">充足</button>
+        <button onclick="setIvSta('low')">快没了</button>
+        <button onclick="setIvSta('out')">没了</button>
+      </div>
+    </div>
+    <button class="btn primary" onclick="saveInv()">保存</button>
+    <button class="btn warn" id="ivDelBtn" style="display:none" onclick="delInv()">删除这个食材</button>
+  </div>
+</div>
+
+<!-- 添加/编辑食谱 -->
+<div class="modal-bg" id="mRec" onclick="if(event.target===this)closeM('mRec')">
+  <div class="modal">
+    <h2 id="mRecT">添加食谱</h2>
+    <label class="f">菜名</label>
+    <input class="f" id="rcName" placeholder="如：番茄炒蛋">
+    <label class="f">大概需要时间（分钟）</label>
+    <input class="f" id="rcTime" type="number" inputmode="numeric" placeholder="20">
+    <label class="f">用料（点"必要/可选"切换）</label>
+    <div id="rcIngs"></div>
+    <button class="btn ghost" onclick="addIngRow()">＋ 加一样用料</button>
+    <label class="f">备注（可选）</label>
+    <input class="f" id="rcNote" placeholder="做法要点、口味偏好…">
+    <button class="btn primary" onclick="saveRec()">保存食谱</button>
+    <button class="btn warn" id="rcDelBtn" style="display:none" onclick="delRec()">删除这个食谱</button>
+  </div>
+</div>
+
+<!-- 做菜确认 -->
+<div class="modal-bg" id="mCook" onclick="if(event.target===this)closeM('mCook')">
+  <div class="modal">
+    <h2 id="ckT">做了这道菜</h2>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:6px">确认扣除用量（可微调实际用了多少）：</div>
+    <div id="ckList"></div>
+    <button class="btn primary" onclick="confirmCook()">确认扣除并记录</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API_URL='https://script.google.com/macros/s/AKfycbwMugR2CpCMmVqDuVNMySZdHrlqe2zNlqGzpW-JgmIEgHf7vkYN0VWyQSzqQyAOEOgW/exec';
+let S={inv:[],rec:[],log:[]};
+let curTab='cook', editInvId=null, editRecId=null, ivType='count', ivSta='ok', cookRecId=null;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const hashParams=new URLSearchParams(location.hash.slice(1));
+if(hashParams.get('k')){
+  localStorage.setItem('kt_api_key',hashParams.get('k'));
+  history.replaceState(null,'',location.pathname+location.search);
+}
+const apiKey=()=>localStorage.getItem('kt_api_key')||'';
+function api(action,params={}){
+  return new Promise((resolve,reject)=>{
+    if(!apiKey())return reject(new Error('链接缺少访问密钥，请重新打开主人分享的完整链接'));
+    const cb='ktcb_'+Date.now()+'_'+Math.random().toString(36).slice(2);
+    const q=new URLSearchParams({action,k:apiKey(),callback:cb});
+    Object.entries(params).forEach(([k,v])=>{if(v!==undefined&&v!==null)q.set(k,typeof v==='object'?JSON.stringify(v):String(v));});
+    const script=document.createElement('script');let timer;
+    const done=()=>{clearTimeout(timer);delete window[cb];script.remove();};
+    window[cb]=r=>{done();r&&r.ok?resolve(r.data):reject(new Error(r&&r.err||'API返回错误'));};
+    script.onerror=()=>{done();reject(new Error('网络连接失败'));};
+    script.src=API_URL+'?'+q.toString();document.head.appendChild(script);
+    timer=setTimeout(()=>{done();reject(new Error('请求超时'));},15000);
+  });
+}
+async function loadAll(manual){
+  try{S=await api('get_all');renderAll();if(manual)toast('已同步最新数据');}
+  catch(e){toast(e.message||'同步失败');}
+}
+async function commit(action,params,success){
+  try{await api(action,params);await loadAll();if(success)toast(success);return true;}
+  catch(e){toast((e.message||'保存失败')+'，已恢复最新数据');await loadAll();return false;}
+}
+function toast(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1800);}
+function go(p){
+  curTab=p;
+  document.querySelectorAll('.page').forEach(x=>x.classList.remove('on'));
+  document.getElementById('p-'+p).classList.add('on');
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
+  document.getElementById('fab').style.display=(p==='inv'||p==='rec')?'block':'none';
+}
+function fabClick(){curTab==='inv'?openInv():openRec();}
+function openM(id){document.getElementById(id).classList.add('on');}
+function closeM(id){document.getElementById(id).classList.remove('on');}
+
+/* ---------- 库存 ---------- */
+function setIvType(t){ivType=t;
+  document.querySelectorAll('#ivTypeSeg button').forEach((b,i)=>b.classList.toggle('on',(t==='count')===(i===0)));
+  document.getElementById('ivCountFields').style.display=t==='count'?'block':'none';
+  document.getElementById('ivStaFields').style.display=t==='sta'?'block':'none';
+}
+function setIvSta(s){ivSta=s;
+  const m={ok:0,low:1,out:2};
+  document.querySelectorAll('#ivStaSeg button').forEach((b,i)=>b.classList.toggle('on',i===m[s]));
+}
+function openInv(item){
+  editInvId=item?item.id:null;
+  document.getElementById('mInvT').textContent=item?'编辑库存':'添加库存';
+  document.getElementById('ivDelBtn').style.display=item?'block':'none';
+  document.getElementById('ivName').value=item?item.name:'';
+  document.getElementById('ivLoc').value=item?ZONE_LOC[zoneOf(item)]:'保鲜';
+  document.getElementById('ivNote').value=item?(item.note||''):'';
+  setIvType(item?item.type:'count');
+  document.getElementById('ivQty').value=item&&item.type==='count'?item.qty:'';
+  document.getElementById('ivUnit').value=item&&item.type==='count'?(item.unit||''):'';
+  document.getElementById('ivMin').value=item&&item.min?item.min:'';
+  setIvSta(item&&item.type==='sta'?item.sta:'ok');
+  openM('mInv');
+}
+async function saveInv(){
+  const name=document.getElementById('ivName').value.trim();
+  if(!name)return toast('请填名称');
+  let it=editInvId?S.inv.find(x=>x.id===editInvId):null;
+  if(!it){it={id:uid()};S.inv.push(it);}
+  it.name=name;it.type=ivType;
+  it.loc=document.getElementById('ivLoc').value.trim();
+  it.note=document.getElementById('ivNote').value.trim();
+  if(ivType==='count'){
+    it.qty=parseFloat(document.getElementById('ivQty').value)||0;
+    it.unit=document.getElementById('ivUnit').value.trim()||'个';
+    const mn=parseFloat(document.getElementById('ivMin').value);
+    it.min=isNaN(mn)?null:mn;
+    delete it.sta;
+  }else{it.sta=ivSta;delete it.qty;delete it.unit;delete it.min;}
+  closeM('mInv');renderAll();
+  await commit('add_item',{id:it.id,name:it.name,type:it.type,qty:it.qty,unit:it.unit,sta:it.sta,min:it.min,loc:it.loc,note:it.note,by:'app'},'已保存');
+}
+async function delInv(){
+  if(!confirm('确定删除？'))return;
+  S.inv=S.inv.filter(x=>x.id!==editInvId);
+  closeM('mInv');renderAll();await commit('delete_item',{id:editInvId,by:'app'},'已删除');
+}
+async function adjQty(id,d){
+  const it=S.inv.find(x=>x.id===id);if(!it)return;
+  const step=it.qty>=100?50:1;
+  it.qty=Math.max(0,Math.round((it.qty+d*step)*100)/100);
+  renderAll();await commit('adj_qty',{id,set:it.qty,by:'app'});
+}
+async function cycleSta(id){
+  const it=S.inv.find(x=>x.id===id);if(!it)return;
+  it.sta=it.sta==='ok'?'low':it.sta==='low'?'out':'ok';
+  renderAll();await commit('set_sta',{id,sta:it.sta,by:'app'});
+}
+const ZONES={frz:'冰箱 · 急冻',chill:'冰箱 · 保鲜',cab1:'上柜 · 泡面零食',cab2:'上柜 · 调料早餐',low:'下柜 · 干货调料',misc:'其他'};
+const ZONE_LOC={frz:'急冻',chill:'保鲜',cab1:'上柜上层',cab2:'上柜下层',low:'下柜',misc:'其他'};
+let curZone=null;
+function zoneOf(it){
+  const l=it.loc||'';
+  if(l.includes('急冻')||l.includes('冷冻'))return 'frz';
+  if(l.includes('保鲜')||l.includes('冷藏'))return 'chill';
+  if(l.includes('上柜上'))return 'cab1';
+  if(l.includes('上柜下')||l.includes('上柜'))return 'cab2';
+  if(l.includes('下柜'))return 'low';
+  if(l.includes('调料'))return 'cab2';
+  if(it.type==='sta')return 'cab2';
+  return 'misc';
+}
+function countCard(it){
+  const low=it.min!=null&&it.qty<=it.min;
+  return `<div class="card row">
+    <div class="grow" onclick='openInv(${JSON.stringify(it)})'>
+      <div class="item-name">${esc(it.name)} ${low?'<span class="low-flag">⚠ 该补了</span>':''}</div>
+      ${it.note?`<div class="item-sub">${esc(it.note)}</div>`:''}
+    </div>
+    <div class="qty-ctrl">
+      <button onclick="adjQty('${it.id}',-1)">−</button>
+      <div class="qty-num">${it.qty}<small> ${esc(it.unit)}</small></div>
+      <button onclick="adjQty('${it.id}',1)">＋</button>
+    </div>
+  </div>`;
+}
+function staCard(it){
+  const staTxt={ok:'充足',low:'快没了',out:'没了'};
+  return `<div class="card row">
+    <div class="grow" onclick='openInv(${JSON.stringify(it)})'><div class="item-name">${esc(it.name)}</div>${it.note?`<div class="item-sub">${esc(it.note)}</div>`:''}</div>
+    <button class="chip ${it.sta}" onclick="cycleSta('${it.id}')">${staTxt[it.sta]}</button>
+  </div>`;
+}
+function openZone(z,el){
+  curZone=z;
+  if(el){el.classList.add('pull');setTimeout(()=>el.classList.remove('pull'),320);}
+  document.getElementById('znSearch').value='';
+  renderZone();openM('mZone');
+}
+function closeZone(){curZone=null;closeM('mZone');}
+function itemWarn(it){return (it.type==='count'&&((it.min!=null&&it.qty<=it.min)||it.qty<=0))||(it.type==='sta'&&it.sta!=='ok');}
+function renderZone(){
+  if(!curZone)return;
+  document.getElementById('znT').textContent=ZONES[curZone];
+  document.getElementById('znInner').className='zone-inner'+(curZone==='frz'||curZone==='chill'?'':' warm');
+  document.getElementById('znClose').textContent=curZone==='frz'||curZone==='chill'?'🚪 关上冰箱门':curZone==='misc'?'收起':'🚪 关上柜门';
+  const q=(document.getElementById('znSearch').value||'').trim();
+  let items=S.inv.filter(it=>zoneOf(it)===curZone);
+  if(q)items=items.filter(it=>(it.name+' '+(it.note||'')).toLowerCase().includes(q.toLowerCase()));
+  items.sort((a,b)=>(itemWarn(b)-itemWarn(a))||a.name.localeCompare(b.name,'zh'));
+  document.getElementById('znList').innerHTML=items.length
+    ?items.map(it=>it.type==='count'?countCard(it):staCard(it)).join('')
+    :'<div class="empty" style="padding:24px">'+(q?'没搜到「'+esc(q)+'」':'这一层是空的<br>点上方「＋ 添加」放东西进来')+'</div>';
+}
+function addToZone(){
+  closeM('mZone');
+  openInv();
+  document.getElementById('ivLoc').value=ZONE_LOC[curZone]||'其他';
+  if(curZone==='cab2'||curZone==='low')setIvType('sta');
+}
+function renderInv(){
+  Object.keys(ZONES).forEach(z=>{
+    const items=S.inv.filter(it=>zoneOf(it)===z);
+    const warn=items.some(it=>(it.type==='count'&&((it.min!=null&&it.qty<=it.min)||it.qty<=0))||(it.type==='sta'&&it.sta!=='ok'));
+    const el=document.getElementById('zc-'+z);
+    if(el){el.textContent=items.length;el.className='f-count'+(warn?' warn':'');}
+  });
+  renderZone();
+}
+
+/* ---------- 食谱 ---------- */
+function ingRowHtml(g){
+  g=g||{name:'',amt:'',unit:'',must:true};
+  return `<div class="ing-row">
+    <div class="top">
+      <input placeholder="食材名" class="g-name" value="${esc(g.name)}" list="invNames">
+      <input placeholder="量" class="g-amt amt" type="number" inputmode="decimal" value="${g.amt!==''&&g.amt!=null?g.amt:''}">
+      <input placeholder="单位" class="g-unit unit" value="${esc(g.unit||'')}">
+      <button class="nec-toggle ${g.must?'must':'opt'}" onclick="this.classList.toggle('must');this.classList.toggle('opt');this.textContent=this.classList.contains('must')?'必要':'可选'">${g.must?'必要':'可选'}</button>
+      <button class="del-x" onclick="this.closest('.ing-row').remove()">✕</button>
+    </div>
+  </div>`;
+}
+function addIngRow(g){document.getElementById('rcIngs').insertAdjacentHTML('beforeend',ingRowHtml(g));}
+function openRec(rc){
+  editRecId=rc?rc.id:null;
+  document.getElementById('mRecT').textContent=rc?'编辑食谱':'添加食谱';
+  document.getElementById('rcDelBtn').style.display=rc?'block':'none';
+  document.getElementById('rcName').value=rc?rc.name:'';
+  document.getElementById('rcTime').value=rc?rc.time:'';
+  document.getElementById('rcNote').value=rc?(rc.note||''):'';
+  document.getElementById('rcIngs').innerHTML='';
+  (rc?rc.ings:[{must:true},{must:true}]).forEach(g=>addIngRow(g));
+  openM('mRec');
+}
+async function saveRec(){
+  const name=document.getElementById('rcName').value.trim();
+  if(!name)return toast('请填菜名');
+  const ings=[...document.querySelectorAll('#rcIngs .ing-row')].map(r=>({
+    name:r.querySelector('.g-name').value.trim(),
+    amt:parseFloat(r.querySelector('.g-amt').value)||null,
+    unit:r.querySelector('.g-unit').value.trim(),
+    must:r.querySelector('.nec-toggle').classList.contains('must')
+  })).filter(g=>g.name);
+  if(!ings.length)return toast('至少填一样用料');
+  let rc=editRecId?S.rec.find(x=>x.id===editRecId):null;
+  if(!rc){rc={id:uid()};S.rec.push(rc);}
+  rc.name=name;rc.time=parseInt(document.getElementById('rcTime').value)||null;
+  rc.note=document.getElementById('rcNote').value.trim();rc.ings=ings;
+  closeM('mRec');renderAll();await commit('add_recipe',{id:rc.id,name:rc.name,time:rc.time,note:rc.note,ings_json:JSON.stringify(rc.ings),by:'app'},'食谱已保存');
+}
+async function delRec(){
+  if(!confirm('确定删除这个食谱？'))return;
+  S.rec=S.rec.filter(x=>x.id!==editRecId);
+  closeM('mRec');renderAll();await commit('delete_recipe',{id:editRecId,by:'app'},'食谱已删除');
+}
+function renderRec(){
+  document.getElementById('recList').innerHTML=S.rec.length?S.rec.map(rc=>`
+    <div class="card recipe-card" onclick='openRec(${JSON.stringify(rc)})'>
+      <div class="row"><h3 class="grow">${esc(rc.name)}</h3><span class="time-tag">${rc.time?'⏱ '+rc.time+'分钟':''}</span></div>
+      <div class="ing-line">${rc.ings.map(g=>`${g.must?'<b>':'<span class="opt-mark">'}${esc(g.name)}${g.amt?g.amt+(g.unit||''):''}${g.must?'</b>':'</span>'}`).join(' · ')}</div>
+      ${rc.note?`<div class="ing-line">📝 ${esc(rc.note)}</div>`:''}
+    </div>`).join(''):'<div class="empty">还没有食谱<br>点右下角 ＋ 添加你们的第一道菜</div>';
+}
+
+/* ---------- 匹配 ---------- */
+function findInv(name){return S.inv.find(x=>x.name===name);}
+function ingStatus(g){
+  const it=findInv(g.name);
+  if(!it)return 'miss';
+  if(it.type==='sta')return it.sta==='out'?'miss':'ok';
+  if(g.amt!=null)return it.qty>=g.amt?'ok':(it.qty>0?'part':'miss');
+  return it.qty>0?'ok':'miss';
+}
+function matchRecipe(rc){
+  const missMust=[],missOpt=[];
+  rc.ings.forEach(g=>{
+    const st=ingStatus(g);
+    if(st!=='ok')(g.must?missMust:missOpt).push(g.name+(st==='part'?'(不够)':''));
+  });
+  return {missMust,missOpt,can:missMust.length===0};
+}
+async function togglePlan(id){
+  S.plan=S.plan||[];
+  const i=S.plan.indexOf(id);
+  i>=0?S.plan.splice(i,1):S.plan.push(id);
+  renderAll();await commit('plan_toggle',{recipe:id,by:'app'});
+}
+function renderCook(){
+  if(!S.rec.length){document.getElementById('cookList').innerHTML='<div class="empty">先去「食谱」加几道菜<br>这里就会告诉你现在能做什么 🍳</div>';return;}
+  const plan=S.plan||[];
+  const scored=S.rec.map(rc=>({rc,m:matchRecipe(rc),p:plan.includes(rc.id)}))
+    .sort((a,b)=>(b.p-a.p)||(a.m.missMust.length-b.m.missMust.length)||((a.rc.time||99)-(b.rc.time||99)));
+  document.getElementById('cookList').innerHTML=scored.map(({rc,m,p})=>{
+    const band=m.can?(m.missOpt.length?'near':'full'):(m.missMust.length<=2?'near':'far');
+    const bandTxt=m.can?(m.missOpt.length?`✓ 能做（缺${m.missOpt.length}样可选）`:'✓ 现在就能做'):`缺 ${m.missMust.length} 样必要食材`;
+    return `<div class="card recipe-card">
+      <div class="row"><h3 class="grow">${esc(rc.name)}</h3><span class="time-tag">${rc.time?'⏱ '+rc.time+'分钟':''}</span><button class="star" onclick="togglePlan('${rc.id}')">${p?'⭐':'☆'}</button></div>
+      ${p?'<span class="plan-tag">本周想做</span>':''}
+      <span class="match-band ${band}">${bandTxt}</span>
+      ${m.missMust.length?`<div class="miss-list">缺：${m.missMust.map(esc).join('、')}</div>`:''}
+      ${m.can?`<button class="btn primary" style="margin-top:10px" onclick="openCook('${rc.id}')">做这道菜 → 扣库存</button>`:''}
+    </div>`;
+  }).join('');
+}
+function openCook(id){
+  cookRecId=id;
+  const rc=S.rec.find(x=>x.id===id);
+  document.getElementById('ckT').textContent='做了「'+rc.name+'」';
+  document.getElementById('ckList').innerHTML=rc.ings.map((g,i)=>{
+    const it=findInv(g.name);
+    if(it&&it.type==='count'&&g.amt!=null){
+      return `<div class="ing-row"><div class="top">
+        <div class="grow" style="font-size:14px;font-weight:600">${esc(g.name)} <small style="color:var(--muted)">现有${it.qty}${esc(it.unit)}</small></div>
+        <input class="amt ck-amt" data-i="${i}" type="number" inputmode="decimal" value="${g.amt}">
+        <span style="font-size:13px;color:var(--muted)">${esc(it.unit)}</span>
+      </div></div>`;
+    }
+    if(it&&it.type==='sta'){
+      return `<div class="ing-row"><div class="top">
+        <div class="grow" style="font-size:14px">${esc(g.name)} <small style="color:var(--muted)">调料，不扣量</small></div>
+        <button class="mini-btn" onclick="this.classList.toggle('green');this.dataset.low=this.dataset.low?'':'1'" data-name="${esc(g.name)}">快没了?</button>
+      </div></div>`;
+    }
+    return '';
+  }).join('')||'<div class="empty" style="padding:16px">这道菜的用料都不在库存里，只记录不扣量</div>';
+  openM('mCook');
+}
+async function confirmCook(){
+  const rc=S.rec.find(x=>x.id===cookRecId);
+  const usedMap={};
+  document.querySelectorAll('.ck-amt').forEach(inp=>{
+    const g=rc.ings[+inp.dataset.i],it=findInv(g.name);
+    const amount=parseFloat(inp.value)||0;
+    if(it&&it.type==='count'){it.qty=Math.max(0,Math.round((it.qty-amount)*100)/100);usedMap[+inp.dataset.i]=amount;}
+  });
+  const ops=[];
+  document.querySelectorAll('#ckList .mini-btn.green').forEach(b=>{
+    const it=findInv(b.dataset.name);
+    if(it&&it.type==='sta'&&it.sta==='ok'){it.sta='low';ops.push({action:'set_sta',id:it.id,sta:'low',by:'app'});}
+  });
+  S.log.unshift({t:Date.now(),name:rc.name});
+  S.log=S.log.slice(0,100);
+  closeM('mCook');renderAll();
+  ops.unshift({action:'cook',recipe:rc.id,used_json:usedMap,by:'app'});
+  await commit('batch',{ops_json:ops},'已扣库存 ✓ 开饭！');
+}
+
+/* ---------- 购物清单 ---------- */
+function shopItems(){
+  return S.inv.filter(it=>
+    (it.type==='count'&&((it.min!=null&&it.qty<=it.min)||it.qty<=0))||
+    (it.type==='sta'&&it.sta!=='ok')
+  );
+}
+function renderShop(){
+  const items=shopItems();
+  document.getElementById('shopTab').querySelector('.badge')?.remove();
+  if(items.length)document.getElementById('shopTab').insertAdjacentHTML('beforeend',`<span class="badge">${items.length}</span>`);
+  document.getElementById('shopList').innerHTML=items.length?items.map(it=>{
+    const why=it.type==='sta'?(it.sta==='out'?'没了':'快没了'):`只剩 ${it.qty}${esc(it.unit||'')}`;
+    return `<div class="card shop-item">
+      <div class="grow"><div class="item-name">${esc(it.name)}</div><div class="why">${why}</div></div>
+      <button class="mini-btn green" onclick="bought('${it.id}')">已买好 ✓</button>
+    </div>`;
+  }).join(''):'<div class="empty">购物清单是空的 🎉<br>库存不足的食材会自动出现在这里</div>';
+}
+async function bought(id){
+  const it=S.inv.find(x=>x.id===id);if(!it)return;
+  if(it.type==='sta'){it.sta='ok';renderAll();await commit('set_sta',{id,sta:'ok',by:'app'},it.name+' 已补充');return;}
+  const v=prompt('买回来后「'+it.name+'」现在总共有多少'+(it.unit||'')+'？',it.qty);
+  if(v===null)return;
+  it.qty=parseFloat(v)||it.qty;renderAll();await commit('adj_qty',{id,set:it.qty,by:'app'},it.name+' 已更新');
+}
+
+/* ---------- render ---------- */
+function renderAll(){
+  renderInv();renderRec();renderCook();renderShop();
+  const can=S.rec.filter(rc=>matchRecipe(rc).can).length;
+  document.getElementById('statLine').textContent=`${S.inv.length} 样库存 · ${S.rec.length} 道食谱 · 现在能做 ${can} 道`;
+  let dl=document.getElementById('invNames');
+  if(!dl){dl=document.createElement('datalist');dl.id='invNames';document.body.appendChild(dl);}
+  dl.innerHTML=S.inv.map(it=>`<option value="${esc(it.name)}">`).join('');
+}
+go('cook');
+loadAll();
+setInterval(()=>{if(!document.querySelector('.modal-bg.on'))loadAll();},20000);
+if('serviceWorker' in navigator)window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js'));
+</script>
+</body>
+</html>
