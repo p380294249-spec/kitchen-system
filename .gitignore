@@ -2,5 +2,7 @@
 Code.gs
 管家指令*.md
 *.secret.*
+.runtime-token.json
+authorize-runtime.ps1
 厨房管家系统_交接文档.md
 厨房系统原型.html
