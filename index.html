@@ -429,7 +429,7 @@ const ZONES={frz:'冰箱 · 急冻',chill:'冰箱 · 保鲜',cab1:'上柜 · 泡
 const ZONE_LOC={frz:'急冻',chill:'保鲜',cab1:'上柜上层',cab2:'上柜下层',low:'下柜',misc:'其他'};
 let curZone=null;
 function zoneOf(it){
-  const l=it.loc||'';
+  const l=String(it.loc??'');
   if(l.includes('急冻')||l.includes('冷冻'))return 'frz';
   if(l.includes('保鲜')||l.includes('冷藏'))return 'chill';
   if(l.includes('上柜上'))return 'cab1';
@@ -476,7 +476,7 @@ function renderZone(){
   const q=(document.getElementById('znSearch').value||'').trim();
   let items=S.inv.filter(it=>zoneOf(it)===curZone);
   if(q)items=items.filter(it=>(it.name+' '+(it.note||'')).toLowerCase().includes(q.toLowerCase()));
-  items.sort((a,b)=>(itemWarn(b)-itemWarn(a))||a.name.localeCompare(b.name,'zh'));
+  items.sort((a,b)=>(itemWarn(b)-itemWarn(a))||String(a.name??'').localeCompare(String(b.name??''),'zh'));
   document.getElementById('znList').innerHTML=items.length
     ?items.map(it=>it.type==='count'?countCard(it):staCard(it)).join('')
     :'<div class="empty" style="padding:24px">'+(q?'没搜到「'+esc(q)+'」':'这一层是空的<br>点上方「＋ 添加」放东西进来')+'</div>';
@@ -553,7 +553,7 @@ function renderRec(){
 }
 
 /* ---------- 匹配 ---------- */
-function findInv(name){return S.inv.find(x=>x.name===name);}
+function findInv(name){return S.inv.find(x=>String(x.name??'')===String(name??''));}
 function ingStatus(g){
   const it=findInv(g.name);
   if(!it)return 'miss';
