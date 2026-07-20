@@ -323,9 +323,13 @@ let curTab='cook', editInvId=null, editRecId=null, ivType='count', ivSta='ok', c
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hashParams=new URLSearchParams(location.hash.slice(1));
-if(hashParams.get('k')){
-  localStorage.setItem('kt_api_key',hashParams.get('k'));
-  history.replaceState(null,'',location.pathname+location.search);
+const pageParams=new URLSearchParams(location.search);
+const suppliedKey=hashParams.get('k')||pageParams.get('setup');
+if(suppliedKey){
+  localStorage.setItem('kt_api_key',suppliedKey);
+  pageParams.delete('setup');
+  const cleanQuery=pageParams.toString();
+  history.replaceState(null,'',location.pathname+(cleanQuery?'?'+cleanQuery:''));
 }
 const apiKey=()=>localStorage.getItem('kt_api_key')||'';
 function api(action,params={}){
@@ -344,7 +348,10 @@ function api(action,params={}){
 }
 async function loadAll(manual){
   try{S=await api('get_all');renderAll();if(manual)toast('已同步最新数据');}
-  catch(e){toast(e.message||'同步失败');}
+  catch(e){
+    document.getElementById('statLine').textContent=apiKey()?'连接失败，请点同步重试':'尚未连接，请重新打开主人分享的完整链接';
+    toast(e.message||'同步失败');
+  }
 }
 async function commit(action,params,success){
   try{await api(action,params);await loadAll();if(success)toast(success);return true;}
