@@ -39,10 +39,11 @@ header h1{font-size:22px;font-weight:800;letter-spacing:1px}
 header .sub{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:8px}
 .sync-btn{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:20px;padding:4px 12px;font-size:12px;color:var(--ink)}
 .tabs{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;display:flex;background:#fff;border-top:1px solid var(--line);z-index:50}
-.tabs button{flex:1;padding:10px 0 max(10px, env(safe-area-inset-bottom));background:none;border:none;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit}
+.tabs button{flex:1 1 0;min-width:0;overflow:hidden;padding:10px 0 max(10px, env(safe-area-inset-bottom));background:none;border:none;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit;white-space:nowrap}
 .tabs button .ic{font-size:20px}
 .tabs button.on{color:var(--green);font-weight:700}
 .tabs.five button{font-size:11px}
+.tabs.five button .ic{font-size:19px}
 .page{display:none;padding:6px 16px 20px}
 .page.on{display:block}
 .section-t{font-size:13px;font-weight:700;color:var(--muted);margin:16px 2px 8px;display:flex;align-items:center;gap:8px}
