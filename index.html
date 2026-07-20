@@ -324,12 +324,9 @@ const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hashParams=new URLSearchParams(location.hash.slice(1));
 const pageParams=new URLSearchParams(location.search);
-const suppliedKey=hashParams.get('k')||pageParams.get('setup');
+const suppliedKey=hashParams.get('k')||pageParams.get('k')||pageParams.get('setup');
 if(suppliedKey){
   localStorage.setItem('kt_api_key',suppliedKey);
-  pageParams.delete('setup');
-  const cleanQuery=pageParams.toString();
-  history.replaceState(null,'',location.pathname+(cleanQuery?'?'+cleanQuery:''));
 }
 const apiKey=()=>localStorage.getItem('kt_api_key')||'';
 function api(action,params={}){

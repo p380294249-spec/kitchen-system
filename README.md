@@ -2,7 +2,7 @@
 
 家庭厨房库存、食谱、做菜扣减与购物清单 PWA。
 
-前端部署在 GitHub Pages，数据由 Google Apps Script Web App 连接到 Google Sheet。访问密钥不会提交到本仓库，而是由主人通过 App 链接的 URL fragment 私下提供。
+前端部署在 GitHub Pages，数据由 Google Apps Script Web App 连接到 Google Sheet。访问密钥不会提交到本仓库，而是由主人通过私下分享的完整 App 链接提供。
 
 ## 使用
 
