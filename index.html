@@ -322,7 +322,7 @@ const DEFAULT_API_KEY='DhbQR_q59uiKIQ_eOKiq8uRt_edyRg_7';
 let S={inv:[],rec:[],log:[]};
 let curTab='cook', editInvId=null, editRecId=null, ivType='count', ivSta='ok', cookRecId=null;
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
-const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const hashParams=new URLSearchParams(location.hash.slice(1));
 const pageParams=new URLSearchParams(location.search);
 const suppliedKey=hashParams.get('k')||pageParams.get('k')||pageParams.get('setup');
