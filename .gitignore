@@ -4,5 +4,6 @@ Code.gs
 *.secret.*
 .runtime-token.json
 authorize-runtime.ps1
+CLAUDE_HANDOFF_PRIVATE.md
 厨房管家系统_交接文档.md
 厨房系统原型.html
