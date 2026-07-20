@@ -42,6 +42,7 @@ header .sub{font-size:12px;color:var(--muted);margin-top:2px;display:flex;align-
 .tabs button{flex:1;padding:10px 0 max(10px, env(safe-area-inset-bottom));background:none;border:none;font-size:12px;color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:2px;font-family:inherit}
 .tabs button .ic{font-size:20px}
 .tabs button.on{color:var(--green);font-weight:700}
+.tabs.five button{font-size:11px}
 .page{display:none;padding:6px 16px 20px}
 .page.on{display:block}
 .section-t{font-size:13px;font-weight:700;color:var(--muted);margin:16px 2px 8px;display:flex;align-items:center;gap:8px}
@@ -139,6 +140,17 @@ input.f:focus,select.f:focus{outline:2px solid var(--green);border-color:transpa
 .fridge-hint{text-align:center;font-size:12px;color:var(--muted);margin-top:12px}
 .star{background:none;border:none;font-size:20px;padding:2px 4px;line-height:1}
 .plan-tag{display:inline-flex;background:var(--ink);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:12px;margin:8px 8px 0 0}
+/* 管家 */
+.butler-wrap{display:flex;flex-direction:column;min-height:calc(100vh - 165px)}
+.butler-chat{flex:1;padding:4px 0 12px;display:flex;flex-direction:column;gap:9px}
+.bubble{max-width:88%;padding:10px 13px;border-radius:15px;font-size:14px;line-height:1.55;white-space:pre-wrap}
+.bubble.bot{align-self:flex-start;background:#fff;border:1px solid var(--line);border-bottom-left-radius:4px}
+.bubble.me{align-self:flex-end;background:var(--green);color:#fff;border-bottom-right-radius:4px}
+.quick-asks{display:flex;gap:6px;overflow-x:auto;padding:3px 0 10px;scrollbar-width:none}
+.quick-asks button{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:18px;padding:7px 11px;font-size:12px;color:var(--ink)}
+.butler-send{display:flex;gap:8px;position:sticky;bottom:67px;background:var(--paper);padding:8px 0 calc(8px + env(safe-area-inset-bottom))}
+.butler-send input{flex:1;min-width:0;border:1px solid var(--line);background:#fff;border-radius:22px;padding:11px 14px;font-size:15px;color:var(--ink)}
+.butler-send button{border:0;border-radius:22px;padding:0 17px;background:var(--green);color:#fff;font-weight:700}
 /* 分区面板固定头尾，中间滚动 */
 #mZone .modal{display:flex;flex-direction:column;height:82vh}
 #mZone .zone-inner{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch}
@@ -224,13 +236,31 @@ input.f:focus,select.f:focus{outline:2px solid var(--green);border-color:transpa
   <div id="shopList"></div>
 </div>
 
+<!-- 厨房管家 -->
+<div class="page" id="p-butler">
+  <div class="butler-wrap">
+    <div class="quick-asks">
+      <button onclick="askButler('冰箱有什么')">冰箱有什么</button>
+      <button onclick="askButler('今晚吃什么')">今晚吃什么</button>
+      <button onclick="askButler('购物清单')">购物清单</button>
+      <button onclick="askButler('本周计划')">本周计划</button>
+    </div>
+    <div class="butler-chat" id="butlerChat"></div>
+    <div class="butler-send">
+      <input id="butlerInput" placeholder="问：今晚吃什么？" onkeydown="if(event.key==='Enter')sendButler()">
+      <button onclick="sendButler()">发送</button>
+    </div>
+  </div>
+</div>
+
 <button class="fab" id="fab" onclick="fabClick()">＋</button>
 
-<nav class="tabs">
+<nav class="tabs five">
   <button class="on" data-p="cook" onclick="go('cook')"><span class="ic">🍳</span>今天吃什么</button>
   <button data-p="inv" onclick="go('inv')"><span class="ic">🧺</span>库存</button>
   <button data-p="rec" onclick="go('rec')"><span class="ic">📖</span>食谱</button>
   <button data-p="shop" onclick="go('shop')" id="shopTab"><span class="ic">🛒</span>购物清单</button>
+  <button data-p="butler" onclick="go('butler')"><span class="ic">💬</span>管家</button>
 </nav>
 
 <!-- 分区内容 -->
@@ -318,6 +348,7 @@ input.f:focus,select.f:focus{outline:2px solid var(--green);border-color:transpa
 
 <script>
 const API_URL='https://script.google.com/macros/s/AKfycbwMugR2CpCMmVqDuVNMySZdHrlqe2zNlqGzpW-JgmIEgHf7vkYN0VWyQSzqQyAOEOgW/exec';
+const DEFAULT_API_KEY='DhbQR_q59uiKIQ_eOKiq8uRt_edyRg_7';
 let S={inv:[],rec:[],log:[]};
 let curTab='cook', editInvId=null, editRecId=null, ivType='count', ivSta='ok', cookRecId=null;
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
@@ -328,7 +359,7 @@ const suppliedKey=hashParams.get('k')||pageParams.get('k')||pageParams.get('setu
 if(suppliedKey){
   localStorage.setItem('kt_api_key',suppliedKey);
 }
-const apiKey=()=>localStorage.getItem('kt_api_key')||'';
+const apiKey=()=>localStorage.getItem('kt_api_key')||DEFAULT_API_KEY;
 function api(action,params={}){
   return new Promise((resolve,reject)=>{
     if(!apiKey())return reject(new Error('链接缺少访问密钥，请重新打开主人分享的完整链接'));
@@ -361,6 +392,7 @@ function go(p){
   document.getElementById('p-'+p).classList.add('on');
   document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.p===p));
   document.getElementById('fab').style.display=(p==='inv'||p==='rec')?'block':'none';
+  if(p==='butler')renderButler();
 }
 function fabClick(){curTab==='inv'?openInv():openRec();}
 function openM(id){document.getElementById(id).classList.add('on');}
@@ -632,6 +664,72 @@ async function confirmCook(){
   closeM('mCook');renderAll();
   ops.unshift({action:'cook',recipe:rc.id,used_json:usedMap,by:'app'});
   await commit('batch',{ops_json:ops},'已扣库存 ✓ 开饭！');
+}
+
+/* ---------- 厨房管家 ---------- */
+let butlerStarted=false;
+function renderButler(){
+  if(butlerStarted)return;
+  butlerStarted=true;
+  butlerSay('我是厨房管家。可以直接问“冰箱有什么”“今晚吃什么”，也可以说“做了扇贝粉丝”“虾还剩1包”。涉及改库存时，我会先让你确认。');
+}
+function butlerSay(text,mine=false){
+  const chat=document.getElementById('butlerChat');if(!chat)return;
+  const b=document.createElement('div');b.className='bubble '+(mine?'me':'bot');b.textContent=text;chat.appendChild(b);b.scrollIntoView({behavior:'smooth',block:'end'});
+}
+function sendButler(){
+  const input=document.getElementById('butlerInput'),text=input.value.trim();if(!text)return;
+  input.value='';askButler(text);
+}
+function butlerFindRecipe(name){
+  const n=name.replace(/[。！!？?]/g,'').trim();
+  return S.rec.find(r=>r.name===n)||S.rec.find(r=>n.includes(r.name)||r.name.includes(n));
+}
+function butlerFindItem(name){
+  const n=name.replace(/[。！!？?]/g,'').trim();
+  return S.inv.find(x=>x.name===n)||S.inv.find(x=>n.includes(x.name)||x.name.includes(n));
+}
+async function askButler(raw){
+  const text=(raw||'').trim();if(!text)return;renderButler();butlerSay(text,true);
+  if(!S.inv.length)await loadAll();
+  if(!S.inv.length){butlerSay('暂时连不上库存，请稍后点“同步”再试。');return;}
+  if(/冰箱|库存|有什么/.test(text)&&!/吃什么|做什么/.test(text)){
+    const items=S.inv.filter(x=>['frz','chill'].includes(zoneOf(x)));
+    const frz=items.filter(x=>zoneOf(x)==='frz').map(x=>x.type==='count'?`${x.name} ${x.qty}${x.unit||''}`:`${x.name}（${x.sta}）`);
+    const chill=items.filter(x=>zoneOf(x)==='chill').map(x=>x.type==='count'?`${x.name} ${x.qty}${x.unit||''}`:`${x.name}（${x.sta}）`);
+    butlerSay(`急冻（${frz.length}样）：${frz.join('、')||'空'}\n保鲜（${chill.length}样）：${chill.join('、')||'空'}`);return;
+  }
+  if(/今晚|吃什么|做什么|推荐/.test(text)){
+    const plan=S.plan||[];
+    const picks=S.rec.map(rc=>({rc,m:matchRecipe(rc),p:plan.includes(rc.id)})).sort((a,b)=>(b.p-a.p)||(a.m.missMust.length-b.m.missMust.length)||((a.rc.time||999)-(b.rc.time||999))).slice(0,3);
+    butlerSay(picks.map((x,i)=>`${i+1}. ${x.rc.name}（${x.rc.time||'?'}分钟）${x.m.can?'，现在能做':`，缺：${x.m.missMust.join('、')}`}${x.p?' ⭐本周计划':''}`).join('\n'));return;
+  }
+  if(/购物|买什么|缺什么/.test(text)){
+    const list=shopItems();butlerSay(list.length?'购物清单：'+list.map(x=>x.name).join('、'):'购物清单是空的。');return;
+  }
+  if(/本周.*计划|计划.*什么/.test(text)){
+    const ids=S.plan||[],names=S.rec.filter(r=>ids.includes(r.id)).map(r=>r.name);butlerSay(names.length?'本周想做：'+names.join('、'):'本周还没有计划。');return;
+  }
+  let m=text.match(/^做了[「“]?(.+?)[」”]?[。！!]?$/);
+  if(m){
+    const rc=butlerFindRecipe(m[1]);if(!rc){butlerSay(`食谱里没找到“${m[1]}”，请先去食谱页添加。`);return;}
+    const deduct=rc.ings.filter(g=>{const it=findInv(g.name);return it&&it.type==='count'&&g.amt!=null;}).map(g=>`${g.name} ${g.amt}${g.unit||''}`);
+    if(!confirm(`确认做了「${rc.name}」？\n将按食谱扣除：${deduct.join('、')||'没有可扣数量的库存'}`)){butlerSay('已取消，没有修改库存。');return;}
+    try{const result=await api('cook',{recipe:rc.id,by:'app-butler'});await loadAll();butlerSay(`已记录「${rc.name}」。\n${result.deducted.length?'已扣：'+result.deducted.map(x=>`${x.name} ${x.used}${x.unit}，剩${x.after}${x.unit}`).join('；'):'没有扣除计数库存。'}\n${result.shopping.length?'要补：'+result.shopping.map(x=>x.name).join('、'):'购物清单没有新增。'}`);}catch(e){butlerSay('记录失败：'+e.message);}return;
+  }
+  m=text.match(/^(.+?)(?:还剩|剩下|剩)(\d+(?:\.\d+)?)\s*([^，。 ]*)/);
+  if(m){
+    const item=butlerFindItem(m[1]);if(!item){butlerSay(`库存里没找到“${m[1]}”。`);return;}if(item.type!=='count'){butlerSay(`${item.name} 是状态库存，请在库存页点选“充足/快没了/没了”。`);return;}
+    const qty=Number(m[2]);if(!confirm(`确认把「${item.name}」改为 ${qty}${m[3]||item.unit||''}？`)){butlerSay('已取消，没有修改库存。');return;}
+    try{await api('adj_qty',{id:item.id,set:qty,by:'app-butler'});await loadAll();butlerSay(`已更新：${item.name} 现在有 ${qty}${item.unit||m[3]||''}。`);}catch(e){butlerSay('更新失败：'+e.message);}return;
+  }
+  m=text.match(/^把?[「“]?(.+?)[」”]?(?:加入|加到)(?:本周)?计划/);
+  if(m){
+    const rc=butlerFindRecipe(m[1]);if(!rc){butlerSay(`食谱里没找到“${m[1]}”。`);return;}
+    if((S.plan||[]).includes(rc.id)){butlerSay(`「${rc.name}」已经在本周计划里。`);return;}
+    try{await api('plan_toggle',{recipe:rc.id,by:'app-butler'});await loadAll();butlerSay(`已把「${rc.name}」加入本周计划。`);}catch(e){butlerSay('更新失败：'+e.message);}return;
+  }
+  butlerSay('我目前会处理：\n• 冰箱有什么 / 库存\n• 今晚吃什么\n• 购物清单 / 本周计划\n• 做了某道菜\n• 某食材还剩多少\n• 把某道菜加入本周计划');
 }
 
 /* ---------- 购物清单 ---------- */
